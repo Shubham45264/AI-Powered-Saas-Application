@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
 import { auth } from '@clerk/nextjs/server';
 
+export const dynamic = 'force-dynamic';
+
 // Configuration
 cloudinary.config({
     cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
@@ -15,18 +17,18 @@ interface CloudinaryUploadResult {
 }
 
 export async function POST(request: NextRequest) {
-    const {userId} = auth()
+    const { userId } = auth()
 
     if (!userId) {
-        return NextResponse.json({error: "Unauthorized"}, {status: 401})
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     try {
         const formData = await request.formData();
         const file = formData.get("file") as File | null;
 
-        if(!file){
-            return NextResponse.json({error: "File not found"}, {status: 400})
+        if (!file) {
+            return NextResponse.json({ error: "File not found" }, { status: 400 })
         }
 
         const bytes = await file.arrayBuffer()
@@ -35,9 +37,9 @@ export async function POST(request: NextRequest) {
         const result = await new Promise<CloudinaryUploadResult>(
             (resolve, reject) => {
                 const uploadStream = cloudinary.uploader.upload_stream(
-                    {folder: "next-cloudinary-uploads"},
+                    { folder: "next-cloudinary-uploads" },
                     (error, result) => {
-                        if(error) reject(error);
+                        if (error) reject(error);
                         else resolve(result as CloudinaryUploadResult);
                     }
                 )
@@ -55,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     } catch (error) {
         console.log("UPload image failed", error)
-        return NextResponse.json({error: "Upload image failed"}, {status: 500})
+        return NextResponse.json({ error: "Upload image failed" }, { status: 500 })
     }
 
 }

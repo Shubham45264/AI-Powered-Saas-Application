@@ -1,16 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
 import { auth } from '@clerk/nextjs/server';
-import { PrismaClient } from '@prisma/client';
+import prisma from '@/lib/prisma';
 
-
-const prisma = new PrismaClient()
+export const dynamic = 'force-dynamic';
 
 // Configuration
 cloudinary.config({
     cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
     api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET // Click 'View Credentials' below to copy your API secret
+    api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
 interface CloudinaryUploadResult {
@@ -21,32 +20,11 @@ interface CloudinaryUploadResult {
 }
 
 export async function POST(request: NextRequest) {
-
-
     try {
-
         const { userId } = auth();
 
         if (!userId) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-        }
-
-        // Check if user exists in our DB, if not, create them (fallback for webhook delays)
-        let user = await prisma.user.findUnique({
-            where: { id: userId }
-        })
-
-        if (!user) {
-            console.log("User not found in DB, creating on the fly:", userId)
-            // Note: We don't have the email here easily without fetching from Clerk, 
-            // but for now we can create a placeholder or fetch it if needed.
-            // Let's assume the email will be updated by the webhook later or just use a placeholder.
-            user = await prisma.user.create({
-                data: {
-                    id: userId,
-                    email: `user_${userId}@placeholder.com`, // Webhook will update this with real email later
-                }
-            })
         }
 
         if (
@@ -57,7 +35,6 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ error: "Cloudinary credentials not found" }, { status: 500 })
         }
 
-
         const formData = await request.formData();
         const file = formData.get("file") as File | null;
         const title = formData.get("title") as string;
@@ -66,6 +43,21 @@ export async function POST(request: NextRequest) {
 
         if (!file) {
             return NextResponse.json({ error: "File not found" }, { status: 400 })
+        }
+
+        // Check if user exists in our DB, if not, create them
+        let user = await prisma.user.findUnique({
+            where: { id: userId }
+        })
+
+        if (!user) {
+            console.log("User not found in DB, creating on the fly:", userId)
+            user = await prisma.user.create({
+                data: {
+                    id: userId,
+                    email: `user_${userId}@placeholder.com`,
+                }
+            })
         }
 
         console.log("Starting Cloudinary upload for file:", file.name)
@@ -81,8 +73,8 @@ export async function POST(request: NextRequest) {
                         eager: [
                             {
                                 fetch_format: "mp4",
-                                quality: 40, // Increased compression aggressiveness (0-100, lower is smaller)
-                                width: 854,  // Downscale to 480p (Standard Definition)
+                                quality: 40,
+                                width: 854,
                                 crop: "limit"
                             },
                         ],
@@ -102,11 +94,9 @@ export async function POST(request: NextRequest) {
 
         console.log("Cloudinary upload successful, saving to Prisma...")
 
-        // When using eager_async, we might not get the final compressed bytes immediately.
-        // Target 90% compression = 10% of original size.
         const compressedSize = result.eager && result.eager.length > 0 && result.eager[0].bytes
             ? String(result.eager[0].bytes)
-            : String(Math.round(result.bytes * 0.1)); // Fallback: estimated 90% reduction (size = 10% of original)
+            : String(Math.round(result.bytes * 0.1));
 
         const video = await prisma.video.create({
             data: {
@@ -125,8 +115,6 @@ export async function POST(request: NextRequest) {
     } catch (error) {
         console.error("Upload video failed with error:", error)
         return NextResponse.json({ error: "Upload video failed" }, { status: 500 })
-    } finally {
-        await prisma.$disconnect()
     }
-
 }
+

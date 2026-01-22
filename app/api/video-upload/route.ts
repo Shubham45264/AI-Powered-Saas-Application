@@ -1,22 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
 import { auth } from '@clerk/nextjs/server';
-import prisma from '@/lib/prisma';
+import prisma from '../../../lib/prisma';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 
-// Configuration
-cloudinary.config({
-    cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    api_secret: process.env.CLOUDINARY_API_SECRET
-});
+// Helper to configure Cloudinary
+const configureCloudinary = () => {
+    cloudinary.config({
+        cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+        api_key: process.env.CLOUDINARY_API_KEY,
+        api_secret: process.env.CLOUDINARY_API_SECRET
+    });
+};
 
 interface CloudinaryUploadResult {
     public_id: string;
     bytes: number;
     duration?: number
     [key: string]: any
+}
+
+export async function GET() {
+    return NextResponse.json({ message: "Method not allowed" }, { status: 405 });
 }
 
 export async function POST(request: NextRequest) {
@@ -34,6 +42,8 @@ export async function POST(request: NextRequest) {
         ) {
             return NextResponse.json({ error: "Cloudinary credentials not found" }, { status: 500 })
         }
+
+        configureCloudinary();
 
         const formData = await request.formData();
         const file = formData.get("file") as File | null;
@@ -117,4 +127,5 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Upload video failed" }, { status: 500 })
     }
 }
+
 

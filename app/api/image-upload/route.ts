@@ -3,6 +3,8 @@ import { v2 as cloudinary } from 'cloudinary';
 import { auth } from '@clerk/nextjs/server';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 
 // Configuration
 cloudinary.config({

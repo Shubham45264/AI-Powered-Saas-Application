@@ -60,8 +60,13 @@ export async function POST(request: NextRequest) {
         console.log("Video saved to DB successfully")
         return NextResponse.json(video)
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Save video metadata failed with error:", error)
-        return NextResponse.json({ error: "Save video metadata failed" }, { status: 500 })
+        return NextResponse.json({
+            error: "Save video metadata failed",
+            details: error?.message || "Unknown error",
+            hasDbUrl: !!process.env.DATABASE_URL,
+            stack: error?.stack
+        }, { status: 500 })
     }
 }

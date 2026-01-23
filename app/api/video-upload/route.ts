@@ -17,10 +17,16 @@ export async function POST(request: NextRequest) {
         }
 
         const body = await request.json();
+        console.log("API received video metadata:", body);
+
         const { title, description, publicId, originalSize, duration, url } = body;
 
         if (!publicId || !title) {
-            return NextResponse.json({ error: "Missing fields" }, { status: 400 })
+            console.warn("Validation failed: Missing publicId or title", { publicId, title });
+            return NextResponse.json({
+                error: "Missing fields",
+                received: { title: !!title, publicId: !!publicId }
+            }, { status: 400 })
         }
 
         // Check if user exists in our DB, if not, create them

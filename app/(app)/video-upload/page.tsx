@@ -29,9 +29,11 @@ function VideoUpload() {
       });
 
       router.push("/home");
-    } catch (error) {
-      console.error(error);
-      alert("Failed to save video metadata");
+    } catch (error: any) {
+      console.error("Upload Save Error:", error);
+      const errorMsg = error.response?.data?.error || "Failed to save video metadata";
+      const details = error.response?.data?.received ? JSON.stringify(error.response.data.received) : "";
+      alert(`${errorMsg} ${details}`);
       setIsUploading(false);
     }
   };

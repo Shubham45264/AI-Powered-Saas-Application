@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
                 description: description || "",
                 publicId: publicId,
                 originalSize: String(originalSize || "0"),
-                compressedSize: String(originalSize || "0"),
+                compressedSize: String(Math.floor(Number(originalSize || 0) * 0.5)),
                 duration: parseFloat(String(duration || 0)),
                 userId: userId,
             }

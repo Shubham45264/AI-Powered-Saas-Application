@@ -10,6 +10,18 @@ function VideoUpload() {
   const [isUploading, setIsUploading] = useState(false);
   const router = useRouter();
 
+  // Using refs to avoid stale closures in the Cloudinary callback
+  const titleRef = React.useRef(title);
+  const descriptionRef = React.useRef(description);
+
+  React.useEffect(() => {
+    titleRef.current = title;
+  }, [title]);
+
+  React.useEffect(() => {
+    descriptionRef.current = description;
+  }, [description]);
+
   // Handle successful upload from Cloudinary Widget
   const handleUploadSuccess = async (result: any) => {
     if (!result || !result.info) return;
@@ -18,10 +30,12 @@ function VideoUpload() {
       setIsUploading(true);
       const { public_id, bytes, duration, secure_url } = result.info;
 
+      console.log("Finalizing upload with title:", titleRef.current);
+
       // Send metadata to our backend to save in DB
       await axios.post("/api/video-upload", {
-        title,
-        description,
+        title: titleRef.current,
+        description: descriptionRef.current,
         publicId: public_id,
         originalSize: bytes.toString(),
         duration: duration,

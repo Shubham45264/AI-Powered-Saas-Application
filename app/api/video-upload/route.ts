@@ -21,13 +21,12 @@ export async function POST(request: NextRequest) {
 
         const { title, description, publicId, originalSize, duration, url } = body;
 
-        if (!publicId || !title) {
-            console.warn("Validation failed: Missing publicId or title", { publicId, title });
-            return NextResponse.json({
-                error: "Missing fields",
-                received: { title: !!title, publicId: !!publicId }
-            }, { status: 400 })
+        if (!publicId) {
+            console.warn("Validation failed: Missing publicId");
+            return NextResponse.json({ error: "Missing publicId" }, { status: 400 })
         }
+
+        const finalTitle = title || "Untitled Video";
 
         // Check if user exists in our DB, if not, create them
         const { default: prisma } = await import('@/lib/prisma');
@@ -45,11 +44,11 @@ export async function POST(request: NextRequest) {
             })
         }
 
-        console.log("Saving video metadata to Prisma...", { title, publicId })
+        console.log("Saving video metadata to Prisma...", { title: finalTitle, publicId, userId });
 
         const video = await prisma.video.create({
             data: {
-                title,
+                title: finalTitle,
                 description: description || "",
                 publicId: publicId,
                 originalSize: String(originalSize || "0"),

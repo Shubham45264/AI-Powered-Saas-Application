@@ -22,10 +22,11 @@ export async function GET(request: NextRequest) {
         console.log("Videos fetched successfully, count:", videos.length);
         return NextResponse.json(videos)
     } catch (error: any) {
-        console.error("Error fetching videos:", error);
+        console.error("DEBUG: Error fetching videos from Prisma:", error);
         return NextResponse.json({
-            error: "Error fetching videos",
-            details: error?.message || "Unknown error"
+            error: "Internal Server Error during fetch",
+            details: error?.message || "Unknown error",
+            stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined
         }, { status: 500 })
     }
 }

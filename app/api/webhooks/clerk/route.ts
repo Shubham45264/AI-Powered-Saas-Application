@@ -1,7 +1,7 @@
 import { Webhook } from 'svix'
 import { headers } from 'next/headers'
 import { WebhookEvent } from '@clerk/nextjs/server'
-import prisma from '../../../../lib/prisma'
+// import prisma from '../../../../lib/prisma'
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -59,6 +59,7 @@ export async function POST(req: Request) {
   if (eventType === 'user.created') {
     const { id, email_addresses } = evt.data
     const email = email_addresses[0].email_address
+    const { default: prisma } = await import('../../../../lib/prisma')
 
     await prisma.user.create({
       data: {
@@ -71,6 +72,7 @@ export async function POST(req: Request) {
   if (eventType === 'user.updated') {
     const { id, email_addresses } = evt.data
     const email = email_addresses[0].email_address
+    const { default: prisma } = await import('../../../../lib/prisma')
 
     await prisma.user.update({
       where: { id },
@@ -82,6 +84,7 @@ export async function POST(req: Request) {
 
   if (eventType === 'user.deleted') {
     const { id } = evt.data
+    const { default: prisma } = await import('../../../../lib/prisma')
 
     await prisma.user.delete({
       where: { id },

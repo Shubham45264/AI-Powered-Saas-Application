@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
-import prisma from '../../../lib/prisma';
+// import prisma from '../../../lib/prisma'; // Removed static import
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -45,6 +45,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Check if user exists in our DB, if not, create them
+        const { default: prisma } = await import('../../../lib/prisma');
         let user = await prisma.user.findUnique({
             where: { id: userId }
         })

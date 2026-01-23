@@ -2,58 +2,36 @@
 import React, { useState } from 'react'
 import axios from 'axios'
 import { useRouter } from 'next/navigation'
+import { CldUploadWidget } from 'next-cloudinary';
 
-/**
- * VideoUpload component
- * Handles video upload to the server
- */
 function VideoUpload() {
-  /**
-   * State variables
-   */
-  const [file, setFile] = useState<File | null>(null);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-
-  /**
-   * Router instance
-   */
   const router = useRouter();
 
-  /**
-   * Maximum file size in bytes
-   * Set to 70MB
-   */
-  const MAX_FILE_SIZE = 70 * 1024 * 1024;
-
-  /**
-   * Handles form submission
-   * @param e - the form submission event
-   */
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!file) return;
-
-    if (file.size > MAX_FILE_SIZE) {
-      alert("File size too large (max 70MB)");
-      return;
-    }
-
-    setIsUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("title", title);
-    formData.append("description", description);
-    formData.append("originalSize", file.size.toString());
+  // Handle successful upload from Cloudinary Widget
+  const handleUploadSuccess = async (result: any) => {
+    if (!result || !result.info) return;
 
     try {
-      await axios.post("/api/video-upload", formData);
-      router.push("/");
+      setIsUploading(true);
+      const { public_id, bytes, duration, secure_url } = result.info;
+
+      // Send metadata to our backend to save in DB
+      await axios.post("/api/video-upload", {
+        title,
+        description,
+        publicId: public_id,
+        originalSize: bytes.toString(),
+        duration: duration,
+        url: secure_url
+      });
+
+      router.push("/home");
     } catch (error) {
       console.error(error);
-      alert("Failed to upload video");
-    } finally {
+      alert("Failed to save video metadata");
       setIsUploading(false);
     }
   };
@@ -61,7 +39,7 @@ function VideoUpload() {
   return (
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Upload Video</h1>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-4">
         <div>
           <label className="label">
             <span className="label-text">Title</span>
@@ -71,6 +49,7 @@ function VideoUpload() {
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             className="input input-bordered w-full"
+            placeholder="Enter video title"
             required
           />
         </div>
@@ -82,28 +61,51 @@ function VideoUpload() {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="textarea textarea-bordered w-full"
+            placeholder="Enter video description"
           />
         </div>
+
         <div>
           <label className="label">
-            <span className="label-text">Video File</span>
+            <span className="label-text">Upload Video</span>
           </label>
-          <input
-            type="file"
-            accept="video/*"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
-            className="file-input file-input-bordered w-full"
-            required
-          />
+          {/* Cloudinary Upload Widget */}
+          <CldUploadWidget
+            filters={{ max_file_size: 70 * 1024 * 1024 }} // 70MB limit on widget
+            signatureEndpoint="/api/sign-cloudinary-params"
+            options={{
+              sources: ['local', 'google_drive', 'dropbox'],
+              resourceType: 'video',
+            }}
+            onSuccess={handleUploadSuccess}
+            onError={(err) => {
+              console.error("Widget Error", err);
+              alert("Upload failed via widget");
+            }}
+            onQueuesEnd={(result, { widget }) => {
+              widget.close();
+            }}
+          >
+            {({ open }) => {
+              return (
+                <button
+                  onClick={() => {
+                    if (!title) {
+                      alert("Please enter a title first");
+                      return;
+                    }
+                    open();
+                  }}
+                  className="btn btn-primary w-full max-w-xs"
+                  disabled={isUploading}
+                >
+                  {isUploading ? "Processing..." : "Select Video & Upload"}
+                </button>
+              );
+            }}
+          </CldUploadWidget>
         </div>
-        <button
-          type="submit"
-          className="btn btn-primary"
-          disabled={isUploading}
-        >
-          {isUploading ? "Uploading..." : "Upload Video"}
-        </button>
-      </form>
+      </div>
     </div>
   );
 }

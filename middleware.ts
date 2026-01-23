@@ -7,7 +7,8 @@ const isPublicRoute = createRouteMatcher([
     "/",
 ])
 const isPublicApiRoute = createRouteMatcher([
-    "/api/videos(.*)"
+    "/api/videos(.*)",
+    "/api/sign-cloudinary-params"
 ])
 
 
@@ -31,7 +32,8 @@ export default clerkMiddleware((auth, req) => {
 
         // If the request is for a protected API and the user is not logged in
         if (isApiRequest && !isPublicApiRoute(req)) {
-            return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+            console.warn("Unauthorized API request blocked by middleware:", currentUrl.pathname);
+            return NextResponse.json({ error: "Unauthorized - Middleware" }, { status: 401 })
         }
     }
     return NextResponse.next()

@@ -72,6 +72,7 @@ function VideoUpload() {
           {/* Cloudinary Upload Widget */}
           <CldUploadWidget
             signatureEndpoint="/api/sign-cloudinary-params"
+            uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET || "video-upload"}
             options={{
               sources: ['local', 'google_drive', 'dropbox'],
               resourceType: 'video',

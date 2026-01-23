@@ -14,6 +14,11 @@ export async function POST(request: NextRequest) {
   const { paramsToSign } = body;
 
   console.log("Signing params:", paramsToSign);
+  console.log("Checking env vars:", {
+    hasSecret: !!process.env.CLOUDINARY_API_SECRET,
+    hasApiKey: !!process.env.CLOUDINARY_API_KEY,
+    hasCloudName: !!process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME
+  });
   if (!process.env.CLOUDINARY_API_SECRET) {
     console.error("Missing CLOUDINARY_API_SECRET");
     return NextResponse.json({ error: "Server misconfiguration" }, { status: 500 });

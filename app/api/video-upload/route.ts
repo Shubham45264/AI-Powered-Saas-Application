@@ -3,10 +3,8 @@ import { auth } from '@clerk/nextjs/server';
 // import prisma from '../../../lib/prisma'; // Removed static import
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-export const fetchCache = 'force-no-store';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
     return NextResponse.json({ message: "Method not allowed" }, { status: 405 });
 }
 
@@ -26,7 +24,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Check if user exists in our DB, if not, create them
-        const { default: prisma } = await import('../../../lib/prisma');
+        const { default: prisma } = await import('@/lib/prisma');
         let user = await prisma.user.findUnique({
             where: { id: userId }
         })

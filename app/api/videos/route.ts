@@ -3,8 +3,6 @@ import { auth } from '@clerk/nextjs/server';
 // import prisma from "../../../lib/prisma"
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-export const fetchCache = 'force-no-store';
 
 export async function GET(request: NextRequest) {
     try {
@@ -15,7 +13,7 @@ export async function GET(request: NextRequest) {
 
         console.log("Fetching videos for user:", userId);
 
-        const { default: prisma } = await import("../../../lib/prisma")
+        const { default: prisma } = await import("@/lib/prisma")
         const videos = await prisma.video.findMany({
             where: { userId },
             orderBy: { createdAt: "desc" }

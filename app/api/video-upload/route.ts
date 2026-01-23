@@ -52,9 +52,9 @@ export async function POST(request: NextRequest) {
                 title,
                 description: description || "",
                 publicId: publicId,
-                originalSize: originalSize || "0",
-                compressedSize: originalSize || "0", // Assume optimized if client-side uploaded? Or we can't get this easily yet.
-                duration: duration || 0,
+                originalSize: String(originalSize || "0"),
+                compressedSize: String(originalSize || "0"),
+                duration: parseFloat(String(duration || 0)),
                 userId: userId,
             }
         })

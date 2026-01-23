@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { v2 as cloudinary } from 'cloudinary';
 import { auth } from '@clerk/nextjs/server';
 import prisma from '../../../lib/prisma';
 
@@ -7,19 +6,11 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const fetchCache = 'force-no-store';
 
-// Helper to configure Cloudinary
-const configureCloudinary = () => {
-    cloudinary.config({
-        cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
-        api_key: process.env.CLOUDINARY_API_KEY,
-        api_secret: process.env.CLOUDINARY_API_SECRET
-    });
-};
-
 interface CloudinaryUploadResult {
     public_id: string;
     bytes: number;
     duration?: number
+    eager?: Array<{ bytes: number }>;
     [key: string]: any
 }
 
@@ -42,8 +33,6 @@ export async function POST(request: NextRequest) {
         ) {
             return NextResponse.json({ error: "Cloudinary credentials not found" }, { status: 500 })
         }
-
-        configureCloudinary();
 
         const formData = await request.formData();
         const file = formData.get("file") as File | null;
@@ -74,6 +63,15 @@ export async function POST(request: NextRequest) {
         const bytes = await file.arrayBuffer()
         const buffer = Buffer.from(bytes)
 
+        // Dynamic import to prevent build-time issues
+        const { v2: cloudinary } = await import('cloudinary');
+
+        cloudinary.config({
+            cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+            api_key: process.env.CLOUDINARY_API_KEY,
+            api_secret: process.env.CLOUDINARY_API_SECRET
+        });
+
         const result = await new Promise<CloudinaryUploadResult>(
             (resolve, reject) => {
                 const uploadStream = cloudinary.uploader.upload_stream(
@@ -88,6 +86,7 @@ export async function POST(request: NextRequest) {
                                 crop: "limit"
                             },
                         ],
+                        // Note: eager_async means attributes might not be available immediately in response
                         eager_async: true,
                     },
                     (error, result) => {
@@ -127,5 +126,3 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: "Upload video failed" }, { status: 500 })
     }
 }
-
-

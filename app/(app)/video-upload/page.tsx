@@ -71,16 +71,22 @@ function VideoUpload() {
           </label>
           {/* Cloudinary Upload Widget */}
           <CldUploadWidget
-            filters={{ max_file_size: 70 * 1024 * 1024 }} // 70MB limit on widget
             signatureEndpoint="/api/sign-cloudinary-params"
             options={{
               sources: ['local', 'google_drive', 'dropbox'],
               resourceType: 'video',
+              clientAllowedFormats: ['mp4', 'mov', 'avi'],
+              maxFileSize: 70 * 1024 * 1024,
             }}
-            onSuccess={handleUploadSuccess}
+            onSuccess={(result, { widget }) => {
+              console.log("Widget Success:", result);
+              handleUploadSuccess(result);
+            }}
             onError={(err) => {
-              console.error("Widget Error", err);
-              alert("Upload failed via widget");
+              console.error("Widget Error:", err);
+              // @ts-ignore
+              const errorMsg = err?.statusText || err?.message || "Unknown Error";
+              alert("Upload failed via widget: " + errorMsg);
             }}
             onQueuesEnd={(result, { widget }) => {
               widget.close();
